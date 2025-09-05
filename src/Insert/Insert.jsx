@@ -1,178 +1,177 @@
-// src/QuickEntryRHF.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import books from "../Books/utils/books";
-export default function QuickEntryRHF() {
+import { useNavigate } from "react-router";
+import { getNextId } from "./Utils/getNextId";
+import "./Styles/Insert.css";
+
+function Insert({ onSubmitForm, entries }) {
   const {
     register,
     handleSubmit,
-    watch,
-    reset,
     formState: { errors },
-  } = useForm({
-    defaultValues: {
-      title: "",
-      quantity: 1,
-      price: "",
-      company: "",
-      author: "",
-    },
-  });
+  } = useForm();
+  const navigate = useNavigate();
+  const [image, setImage] = useState(null);
 
-  const [message, setMessage] = useState("");
-  const [, setTick] = useState(0); // force rerender after mutating array
+  const onSubmit = (data) => {
+    const newEntry = {
+      id: getNextId(entries),
+      ...data,
+      cover: image,
+    };
+    onSubmitForm(newEntry);
+    navigate("/books");
+  };
 
-  // live calculated total
-  const watchedQuantity = watch("quantity");
-  const watchedPrice = watch("price");
-  const total = (Number(watchedQuantity) || 0) * (Number(watchedPrice) || 0);
-
-  function onSubmit(data) {
-    const title = (data.title || "").trim();
-    if (!title) {
-      setMessage("Title is required.");
-      return;
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // revoke previous blob url if any
+      if (image && String(image).startsWith("blob:"))
+        URL.revokeObjectURL(image);
+      setImage(URL.createObjectURL(file));
     }
+  };
 
-    const q = Number(data.quantity) || 0;
-    const p = data.price === "" ? undefined : Number(data.price);
+  const removeImage = () => {
+    if (image && String(image).startsWith("blob:")) URL.revokeObjectURL(image);
+    setImage(null);
+  };
 
-    // find existing by exact title (case-insensitive)
-    const existing = books.find(
-      (b) => String(b.title || "").toLowerCase() === title.toLowerCase()
-    );
-
-    if (existing) {
-      existing.quantity = (Number(existing.quantity) || 0) + q;
-      if (p !== undefined) existing.price = p;
-      if (data.company) existing.company = data.company;
-      if (data.author) existing.author = data.author;
-      setMessage(
-        `Updated "${existing.title}" — new quantity: ${existing.quantity}`
-      );
-    } else {
-      const id =
-        title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "") || `book-${Date.now()}`;
-
-      const newBook = {
-        id,
-        title,
-        author: data.author || "",
-        company: data.company || "",
-        price: p !== undefined ? p : 0,
-        quantity: q,
-      };
-
-      books.push(newBook);
-      setMessage(`Added new book "${title}" (qty: ${q})`);
+  // Move to next input on Enter (prevent submit)
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const form = e.target.form;
+      const index = [...form].indexOf(e.target);
+      form.elements[index + 1]?.focus();
     }
-
-    setTick((n) => n + 1); // update UI
-    // clear form but keep helpful defaults
-    reset({ title: "", quantity: 1, price: "", company: "", author: "" });
-  }
+  };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Quick Entry (react-hook-form)
-      </h2>
+    <form className="insert-form" onSubmit={handleSubmit(onSubmit)}>
+      <h2 className="insert-title">Add new book</h2>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 bg-white p-4 rounded shadow"
-      >
-        {/* Title */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Book Title:</label>
-          <input
-            {...register("title", { required: true })}
-            className="flex-1 px-3 py-2 rounded border"
-            placeholder="Exact title = update, otherwise add new"
-          />
-        </div>
-        {errors.title && (
-          <div className="text-sm text-red-600">Title is required</div>
+      <div className="row">
+        <input
+          className="input"
+          {...register("title", { required: "Title is required" })}
+          placeholder="Title"
+          onKeyDown={handleKeyDown}
+        />
+        {errors.title && <span className="error">{errors.title.message}</span>}
+
+        <input
+          className="input"
+          {...register("author", { required: "Author is required" })}
+          placeholder="Author"
+          onKeyDown={handleKeyDown}
+        />
+        {errors.author && (
+          <span className="error">{errors.author.message}</span>
+        )}
+      </div>
+
+      <div className="row">
+        <input
+          className="input"
+          {...register("company", { required: "Company is required" })}
+          placeholder="Company"
+          onKeyDown={handleKeyDown}
+        />
+        {errors.company && (
+          <span className="error">{errors.company.message}</span>
         )}
 
-        {/* Quantity */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Quantity:</label>
-          <input
-            type="number"
-            {...register("quantity", { valueAsNumber: true, min: 0 })}
-            className="w-28 px-3 py-2 rounded border"
-          />
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Price:</label>
-          <input
-            type="number"
-            step="0.01"
-            {...register("price")}
-            className="w-36 px-3 py-2 rounded border"
-            placeholder="optional"
-          />
-        </div>
-
-        {/* Company */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Company:</label>
-          <input
-            {...register("company")}
-            className="flex-1 px-3 py-2 rounded border"
-            placeholder="optional"
-          />
-        </div>
-
-        {/* Author */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Author:</label>
-          <input
-            {...register("author")}
-            className="flex-1 px-3 py-2 rounded border"
-            placeholder="optional"
-          />
-        </div>
-
-        {/* Total (computed) */}
-        <div className="flex items-center gap-3">
-          <label className="min-w-[110px]">Total:</label>
-          <div className="px-3 py-2 rounded border bg-gray-50">{total}</div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <button
-            type="submit"
-            className="px-4 py-2 rounded bg-blue-600 text-white"
-          >
-            Save
-          </button>
-        </div>
-
-        {message && <div className="text-sm text-gray-700 mt-1">{message}</div>}
-      </form>
-
-      {/* Optional: quick in-memory list for debugging */}
-      <div className="mt-6 bg-white p-4 rounded shadow">
-        <h3 className="font-medium mb-2">Books (in-memory)</h3>
-        <ul className="text-sm space-y-1 max-h-48 overflow-auto">
-          {books.map((b) => (
-            <li key={b.id} className="flex justify-between">
-              <span>
-                {b.title}
-                {b.author ? ` — ${b.author}` : ""}
-              </span>
-              <span className="font-medium">{b.quantity}</span>
-            </li>
-          ))}
-        </ul>
+        <input
+          className="input"
+          {...register("price", {
+            required: "Price is required",
+            min: { value: 1, message: "Price must be >= 1" },
+          })}
+          type="number"
+          placeholder="Price"
+          onKeyDown={handleKeyDown}
+        />
+        {errors.price && <span className="error">{errors.price.message}</span>}
       </div>
-    </div>
+
+      <div className="row">
+        <input
+          className="input"
+          {...register("category")}
+          placeholder="Category"
+          onKeyDown={handleKeyDown}
+        />
+        <input
+          className="input"
+          {...register("year")}
+          placeholder="Year"
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+
+      <div className="row">
+        <input
+          className="input"
+          {...register("language")}
+          placeholder="Language"
+          onKeyDown={handleKeyDown}
+        />
+        <input
+          className="input"
+          {...register("address")}
+          placeholder="Shelf Address"
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+
+      <textarea
+        className="textarea"
+        {...register("description")}
+        placeholder="Description"
+        rows="4"
+        onKeyDown={handleKeyDown}
+      />
+
+      {/* Image Input */}
+      <div className="file-row">
+        {!image ? (
+          <label className="file-label">
+            <input
+              className="file-input"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            <span className="file-text">Choose cover image</span>
+          </label>
+        ) : (
+          <div className="preview">
+            <img src={image} alt="preview" className="preview-img" />
+            <div className="preview-actions">
+              <button type="button" className="btn-ghost" onClick={removeImage}>
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="actions">
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => navigate(-1)}
+        >
+          Cancel
+        </button>
+        <button type="submit" className="btn-primary">
+          Submit
+        </button>
+      </div>
+    </form>
   );
 }
+
+export default Insert;
