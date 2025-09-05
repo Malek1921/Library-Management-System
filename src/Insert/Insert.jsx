@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { getNextId } from "./Utils/getNextId";
+import expences from "../Reports/Utils/expences";
 import "./Styles/Insert.css";
 
 function Insert({ onSubmitForm, entries }) {
@@ -13,20 +14,19 @@ function Insert({ onSubmitForm, entries }) {
   const navigate = useNavigate();
   const [image, setImage] = useState(null);
 
-  const onSubmit = (data) => {
-    const newEntry = {
-      id: getNextId(entries),
-      ...data,
-      cover: image,
-    };
-    onSubmitForm(newEntry);
-    navigate("/books");
+  // Move to next input on Enter
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const form = e.target.form;
+      const index = [...form].indexOf(e.target);
+      form.elements[index + 1]?.focus();
+    }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // revoke previous blob url if any
       if (image && String(image).startsWith("blob:"))
         URL.revokeObjectURL(image);
       setImage(URL.createObjectURL(file));
@@ -38,14 +38,24 @@ function Insert({ onSubmitForm, entries }) {
     setImage(null);
   };
 
-  // Move to next input on Enter (prevent submit)
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const form = e.target.form;
-      const index = [...form].indexOf(e.target);
-      form.elements[index + 1]?.focus();
-    }
+  const onSubmit = (data) => {
+    const newEntry = {
+      id: getNextId(entries),
+      ...data,
+      cover: image,
+    };
+
+    // 1️⃣ Push the new entry into parent state
+    onSubmitForm(newEntry);
+
+    // 2️⃣ Push only the form values you need into expences
+    expences.push({
+      company: data.company,
+      price: data.price,
+      quantity: data.quantity, // if you have a quantity input
+    });
+
+    navigate("/books");
   };
 
   return (
@@ -94,6 +104,22 @@ function Insert({ onSubmitForm, entries }) {
           onKeyDown={handleKeyDown}
         />
         {errors.price && <span className="error">{errors.price.message}</span>}
+      </div>
+
+      <div className="row">
+        <input
+          className="input"
+          {...register("quantity", {
+            required: "Quantity is required",
+            min: { value: 1, message: "Quantity must be >= 1" },
+          })}
+          type="number"
+          placeholder="Quantity"
+          onKeyDown={handleKeyDown}
+        />
+        {errors.quantity && (
+          <span className="error">{errors.quantity.message}</span>
+        )}
       </div>
 
       <div className="row">
