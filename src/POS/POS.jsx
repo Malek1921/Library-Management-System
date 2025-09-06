@@ -1,277 +1,206 @@
-import { useState, useMemo } from "react";
-import booksData from "../Books/utils/books"; // adjust path if needed
+import "../POS/Styles/POS.css";
 
-export default function POS() {
-  // Local copy of inventory so we can change stock on checkout
-  const [inventory, setInventory] = useState(
-    booksData.map((b) => ({ ...b })) // shallow clone
-  );
+import { useState, useRef } from "react";
+import { useForm } from "react-hook-form";
 
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null); // selected book object from inventory
-  const [qty, setQty] = useState(1);
-  const [cart, setCart] = useState([]); // { id, title, price, qty, cover }
-  const [error, setError] = useState("");
+// this array will collect all sale totals for reports
+export const salesReports = [];
 
-  // filtered results (simple contains match on title or author)
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return inventory.filter(
-      (b) =>
-        (b.title && b.title.toLowerCase().includes(q)) ||
-        (b.author && b.author.toLowerCase().includes(q))
-    );
-  }, [query, inventory]);
+function POS({ entries }) {
+  const [search, setSearch] = useState("");
+  const [filtered, setFiltered] = useState([]);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [basket, setBasket] = useState([]);
+  const qtyInputRef = useRef(null);
 
-  // compute totals
-  const subtotal = useMemo(
-    () => cart.reduce((s, it) => s + it.price * it.qty, 0),
-    [cart]
-  );
+  // react-hook-form setup
+  const { register, handleSubmit, reset } = useForm();
 
-  // handlers
-  function handleSelectBook(book) {
-    setSelected(book);
-    setQty(1);
-    setError("");
-  }
+  // handle search typing
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
 
-  function handleQtyChange(e) {
-    const value = Number(e.target.value);
-    if (Number.isNaN(value) || value < 1) {
-      setQty("");
+    if (value.trim() === "") {
+      setFiltered([]);
+      setHighlightIndex(-1);
       return;
     }
-    setQty(value);
-    setError("");
-  }
 
-  function handleAddToCart() {
-    if (!selected) return setError("Select a book first.");
-    if (!Number.isInteger(Number(qty)) || qty < 1)
-      return setError("Enter a valid quantity.");
-    const invBook = inventory.find((b) => String(b.id) === String(selected.id));
-    const available = invBook?.qty ?? 0;
+    const results = entries.filter(
+      (book) =>
+        book.title.toLowerCase().includes(value.toLowerCase()) ||
+        book.author.toLowerCase().includes(value.toLowerCase())
+    );
+    setFiltered(results);
+    setHighlightIndex(-1);
+  };
 
-    // already in cart?
-    const inCart = cart.find((c) => String(c.id) === String(selected.id));
-    const alreadyQty = inCart ? inCart.qty : 0;
+  // handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (filtered.length === 0) return;
 
-    if (qty + alreadyQty > available)
-      return setError(
-        `Only ${available - alreadyQty} more available in stock.`
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((prev) =>
+        prev < filtered.length - 1 ? prev + 1 : prev
       );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    } else if (e.key === "Enter" && highlightIndex >= 0) {
+      e.preventDefault();
+      const chosen = filtered[highlightIndex];
+      setSelectedBook(chosen);
+      setFiltered([]);
+      setSearch(chosen.title);
+      setHighlightIndex(-1);
 
-    setCart((prev) => {
-      if (inCart) {
-        // update existing line
-        return prev.map((c) =>
-          String(c.id) === String(selected.id) ? { ...c, qty: c.qty + qty } : c
-        );
+      // focus on quantity input
+      setTimeout(() => {
+        qtyInputRef.current?.focus();
+      }, 0);
+    }
+  };
+
+  // handle adding to basket (via RHF)
+  const handleAddToBasket = (data) => {
+    const qty = Number(data.quantity);
+
+    if (!selectedBook || !qty || qty <= 0) return;
+
+    // simply add a new item every time, no merging
+    setBasket((prev) => [
+      ...prev,
+      {
+        ...selectedBook,
+        qty,
+        subtotal: Number(selectedBook.price) * qty,
+      },
+    ]);
+
+    // reset form and search
+    setSelectedBook(null);
+    setSearch("");
+    reset();
+  };
+
+  // handle delete from basket
+  const handleDelete = (id) => {
+    setBasket((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // calculate total
+  const total = basket.reduce((sum, item) => sum + item.subtotal, 0);
+
+  // finalize sale and push total into salesReports
+  const handleCheckout = () => {
+    if (basket.length === 0) return;
+
+    // 1️⃣ Decrease stock for each item in basket
+    basket.forEach((item) => {
+      const book = entries.find((b) => b.id === item.id);
+      if (book) {
+        book.quantity = Math.max(0, Number(book.quantity) - item.qty);
       }
-      return [
-        ...prev,
-        {
-          id: selected.id,
-          title: selected.title,
-          price: Number(selected.price) || 0,
-          qty,
-          cover: selected.cover,
-        },
-      ];
     });
 
-    setError("");
-    setQty(1);
-  }
+    // 2️⃣ Save the sale total into reports
+    salesReports.push(total);
+    console.log("Updated salesReports:", salesReports);
 
-  function handleRemoveLine(id) {
-    setCart((prev) => prev.filter((i) => String(i.id) !== String(id)));
-  }
-
-  function handleUpdateCartQty(id, newQty) {
-    if (!Number.isInteger(Number(newQty)) || newQty < 1) return;
-    const invBook = inventory.find((b) => String(b.id) === String(id));
-    if (!invBook) return;
-    if (newQty > invBook.qty) {
-      setError(`Only ${invBook.qty} available in stock.`);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((c) => (String(c.id) === String(id) ? { ...c, qty: newQty } : c))
-    );
-    setError("");
-  }
-
-  function handleCheckout() {
-    if (cart.length === 0) return setError("Cart is empty.");
-    // reduce local inventory
-    setInventory((prevInv) =>
-      prevInv.map((b) => {
-        const line = cart.find((c) => String(c.id) === String(b.id));
-        if (!line) return b;
-        return { ...b, qty: b.qty - line.qty };
-      })
-    );
-
-    // simple receipt/logging
-    console.log("=== RECEIPT ===");
-    cart.forEach((c) =>
-      console.log(`${c.title} x ${c.qty} = ${c.price * c.qty}`)
-    );
-    console.log("TOTAL:", subtotal);
-
-    // clear cart & selection
-    setCart([]);
-    setSelected(null);
-    setQty(1);
-    setError("");
-    alert("Checkout complete. Inventory updated (local only).");
-  }
+    // 3️⃣ Alert & reset
+    alert("Sale recorded! Total: " + total);
+    setBasket([]);
+  };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Point of Sale (POS)</h2>
+    <div className="pos">
+      <h2>Point of Sale</h2>
 
       {/* Search */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium">
-          Search book by title or author
-        </label>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Type to search..."
-          className="mt-1 w-full border rounded px-3 py-2"
-        />
-        {/* results */}
-        {results.length > 0 && (
-          <div className="mt-2 bg-white rounded shadow max-h-60 overflow-auto">
-            {results.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => handleSelectBook(r)}
-                className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
-              >
-                <img
-                  src={r.cover}
-                  alt={r.title}
-                  className="w-12 h-16 object-cover rounded"
-                />
-                <div>
-                  <div className="font-medium">{r.title}</div>
-                  <div className="text-xs text-gray-500">{r.author}</div>
-                  <div className="text-xs text-gray-500">Stock: {r.qty}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <input
+        className="input"
+        placeholder="Search by title or author"
+        value={search}
+        onChange={handleSearch}
+        onKeyDown={handleKeyDown}
+      />
 
-      {/* Selected book card */}
-      {selected && (
-        <div className="mb-4 p-3 bg-white rounded shadow flex gap-4">
-          <img
-            src={selected.cover}
-            alt={selected.title}
-            className="w-28 h-36 object-cover rounded"
-          />
-          <div className="flex-1">
-            <h3 className="font-semibold">{selected.title}</h3>
-            <p className="text-sm text-gray-600">{selected.author}</p>
-            <p className="text-sm text-gray-600">Price: ${selected.price}</p>
-            <p className="text-sm text-gray-600">Available: {selected.qty}</p>
-
-            <div className="mt-3 flex items-center gap-2">
-              <label className="text-sm">Quantity</label>
-              <input
-                type="number"
-                min="1"
-                value={qty}
-                onChange={handleQtyChange}
-                className="w-20 px-2 py-1 border rounded"
-              />
-              <button
-                onClick={handleAddToCart}
-                className="ml-2 px-3 py-1 bg-blue-600 text-white rounded"
-              >
-                Add to cart
-              </button>
-            </div>
-            {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
-          </div>
-        </div>
+      {/* Filtered results */}
+      {filtered.length > 0 && (
+        <ul className="results">
+          {filtered.map((book, index) => (
+            <li
+              key={book.id}
+              className={index === highlightIndex ? "highlight" : ""}
+            >
+              {book.title} – {book.author} ({book.category}) | Stock:{" "}
+              {book.quantity}
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* Cart */}
-      <div className="mb-4">
-        <h4 className="font-semibold mb-2">Cart</h4>
-        {cart.length === 0 ? (
-          <div className="text-sm text-gray-500">Cart is empty.</div>
-        ) : (
-          <div className="space-y-2">
-            {cart.map((line) => (
-              <div
-                key={line.id}
-                className="flex items-center gap-3 p-2 bg-white rounded shadow-sm"
-              >
-                <img
-                  src={line.cover}
-                  alt={line.title}
-                  className="w-14 h-18 object-cover rounded"
-                />
-                <div className="flex-1">
-                  <div className="font-medium">{line.title}</div>
-                  <div className="text-xs text-gray-600">
-                    Unit: ${line.price}
-                  </div>
-                </div>
+      {/* Quantity input (react-hook-form) */}
+      {selectedBook && (
+        <form onSubmit={handleSubmit(handleAddToBasket)} className="qty-form">
+          <p>
+            Selected: <b>{selectedBook.title}</b> by {selectedBook.author}
+          </p>
+          <input
+            ref={qtyInputRef}
+            type="number"
+            placeholder="Enter quantity"
+            {...register("quantity", { required: true, min: 1 })}
+          />
+          <button type="submit">Add to Basket</button>
+        </form>
+      )}
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={line.qty}
-                    onChange={(e) =>
-                      handleUpdateCartQty(line.id, Number(e.target.value))
-                    }
-                    className="w-20 px-2 py-1 border rounded"
-                  />
-                  <div className="font-semibold">
-                    ${(line.price * line.qty).toFixed(2)}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveLine(line.id)}
-                    className="px-2 py-1 bg-red-500 text-white rounded"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
+      {/* Basket */}
+      <h3>Basket</h3>
+      {basket.length === 0 ? (
+        <p>No items yet</p>
+      ) : (
+        <table className="basket">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {basket.map((item) => (
+              <tr key={item.id}>
+                <td>{item.title}</td>
+                <td>{item.qty}</td>
+                <td>{item.price}</td>
+                <td>{item.subtotal}</td>
+                <td>
+                  <button onClick={() => handleDelete(item.id)}>Remove</button>
+                </td>
+              </tr>
             ))}
-            <div className="flex justify-between items-center mt-2">
-              <div className="font-semibold">Total:</div>
-              <div className="text-xl font-bold">${subtotal.toFixed(2)}</div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={handleCheckout}
-                className="px-4 py-2 bg-green-600 text-white rounded"
-              >
-                Checkout
-              </button>
-              <button
-                onClick={() => setCart([])}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Clear cart
-              </button>
-            </div>
-          </div>
-        )}
+          </tbody>
+        </table>
+      )}
+
+      {/* Total */}
+      <div className="total">
+        <p>
+          <b>Total:</b> {total}
+        </p>
+        <button onClick={handleCheckout} disabled={basket.length === 0}>
+          Checkout
+        </button>
       </div>
     </div>
   );
 }
+
+export default POS;

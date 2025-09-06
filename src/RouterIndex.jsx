@@ -25,7 +25,7 @@ function RouterIndex() {
           element={<Insert entries={entries} onSubmitForm={handleFormSubmit} />}
         />
 
-        <Route path="/pos" element={<POS />} />
+        <Route path="/pos" element={<POS entries={entries} />} />
         <Route path="/books" element={<Books entries={entries} />} />
         <Route path="/book/:id" element={<BookInfo entries={entries} />} />
         <Route path="/reports" element={<Reports />} />

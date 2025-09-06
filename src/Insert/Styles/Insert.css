@@ -1,239 +1,131 @@
-/* Insert.css
-   Minimal, eye-friendly colors with dark mode.
-   Place this file next to Insert.jsx and import it as shown.
-*/
-
-/* Theme variables */
-:root {
-  --bg: #f6f7fb;
-  --card: #ffffff;
-  --muted: #6b7280;
-  --text: #0f172a;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --success: #10b981;
-  --shadow: 0 6px 18px rgba(13, 38, 71, 0.06);
-  --radius: 12px;
-  --glass: rgba(255, 255, 255, 0.6);
-}
-
-/* Dark mode fallback using prefers-color-scheme */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1220;
-    --card: #0f1724;
-    --muted: #9ca3af;
-    --text: #e6eef8;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --success: #34d399;
-    --shadow: 0 8px 24px rgba(2, 6, 23, 0.6);
-    --glass: rgba(255, 255, 255, 0.03);
-  }
-}
-
-/* Optional: if you use a .dark class on <html> or <body>, it overrides too */
-.dark {
-  --bg: #0b1220;
-  --card: #0f1724;
-  --muted: #9ca3af;
-  --text: #e6eef8;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --shadow: 0 8px 24px rgba(2, 6, 23, 0.6);
-  --glass: rgba(255, 255, 255, 0.03);
-}
-
-/* Form wrapper */
+/* Minimalist Insert Form Styles */
 .insert-form {
-  width: 100%;
-  max-width: 880px;
-  margin: 2.5rem auto;
-  background: linear-gradient(180deg, var(--card), var(--glass));
-  padding: 1.25rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  color: var(--text);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial;
+  max-width: 700px;
+  margin: 2rem auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #222;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
 }
 
-/* Title */
 .insert-title {
-  margin: 0;
-  font-size: 1.25rem;
+  margin-bottom: 1rem;
   font-weight: 600;
-  color: var(--text);
+  text-align: center;
 }
 
-/* Rows */
 .row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-/* Inputs */
 .input,
 .textarea {
-  width: 100%;
-  padding: 0.7rem 0.9rem;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: transparent;
-  box-shadow: none;
-  resize: none; /* ← disable resize */
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
   outline: none;
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: box-shadow 0.15s ease, transform 0.08s ease,
-    border-color 0.12s ease;
-  box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
-/* textarea more specific style */
-.textarea {
-  min-height: 96px;
-  line-height: 1.45;
-  border-radius: 10px;
-}
-
-/* Focus states */
 .input:focus,
 .textarea:focus {
-  border-color: rgba(37, 99, 235, 0.18);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.06);
-  transform: translateY(-1px);
+  border-color: #007bff;
 }
 
-/* Muted placeholder color */
-.input::placeholder,
-.textarea::placeholder {
-  color: var(--muted);
-  opacity: 0.9;
+.textarea {
+  resize: none;
 }
 
-/* File input (styled label) */
+.error {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
 .file-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .file-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.9rem;
-  border-radius: 10px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(0, 0, 0, 0.02)
-  );
-  border: 1px dashed rgba(15, 23, 42, 0.06);
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
   cursor: pointer;
-  color: var(--muted);
-  font-size: 0.95rem;
+  transition: border-color 0.2s, background 0.2s;
+  color: #555;
+}
+
+.file-label:hover {
+  border-color: #007bff;
+  background: #f8faff;
+}
+
+.file-input {
+  display: none;
 }
 
 .file-text {
-  font-weight: 500;
-  color: var(--muted);
+  font-size: 0.95rem;
 }
 
-/* hide native input but keep focus/accessibility */
-.file-input {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
-
-/* Preview */
 .preview {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .preview-img {
-  width: 96px;
-  height: 128px;
+  max-width: 120px;
+  max-height: 150px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-/* Buttons */
-.actions {
+.preview-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-/* Primary */
-.btn-primary {
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(180deg, var(--accent), var(--accent-hover));
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14);
-  transition: transform 0.08s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  opacity: 0.98;
-}
-
-/* Ghost / secondary */
 .btn-ghost {
-  padding: 0.55rem 0.9rem;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: transparent;
-  color: var(--text);
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
   cursor: pointer;
-  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .btn-ghost:hover {
-  background: rgba(15, 23, 42, 0.03);
+  border-color: #007bff;
+  background-color: #f8faff;
 }
 
-/* Responsiveness */
-@media (max-width: 720px) {
-  .insert-form {
-    margin: 1rem;
-    padding: 1rem;
-  }
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
 
-  .row {
-    grid-template-columns: 1fr;
-  }
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
 
-  .preview-img {
-    width: 80px;
-    height: 110px;
-  }
-
-  .actions {
-    justify-content: stretch;
-    flex-direction: column-reverse;
-  }
-  .btn-primary,
-  .btn-ghost {
-    width: 100%;
-  }
+.btn-primary:hover {
+  background-color: #0056b3;
 }

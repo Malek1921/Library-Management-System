@@ -24,7 +24,7 @@ function Books({ entries }) {
             <h1 className="book-title">{book.title}</h1>
             <p className="book-author">{book.author}</p>
             <p className="book-year">{book.year}</p>
-            <p className="book-price">${book.price}</p>
+            <p className="book-price">{book.price * 0.01} AFN</p>
 
             <button
               onClick={() => navigate(`/book/${book.id}`)}

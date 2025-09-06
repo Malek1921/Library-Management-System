@@ -1,44 +1,27 @@
 import { useNavigate } from "react-router";
+import "../Home/Styles/Home.css";
 
 function Home() {
   const navigate = useNavigate();
 
   return (
-    <>
-      <div
-        onClick={() => {
-          navigate("/insert");
-        }}
-        className="cursor-pointer text-blue-600 hover:underline"
-      >
-        insert
+    <div className="home-container">
+      <div className="home-link" onClick={() => navigate("/insert")}>
+        Insert
       </div>
 
-      <div
-        onClick={() => {
-          navigate("/pos");
-        }}
-        className="cursor-pointer text-blue-600 hover:underline"
-      >
+      <div className="home-link" onClick={() => navigate("/pos")}>
         Sell
       </div>
-      <div
-        onClick={() => {
-          navigate("/reports");
-        }}
-        className="cursor-pointer text-blue-600 hover:underline"
-      >
+
+      <div className="home-link" onClick={() => navigate("/reports")}>
         Reports
       </div>
-      <div
-        onClick={() => {
-          navigate("/books");
-        }}
-        className="cursor-pointer text-blue-600 hover:underline"
-      >
+
+      <div className="home-link" onClick={() => navigate("/books")}>
         Books
       </div>
-    </>
+    </div>
   );
 }
 

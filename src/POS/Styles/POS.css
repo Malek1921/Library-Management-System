@@ -1,0 +1,141 @@
+/* Minimalist POS Styles */
+.pos {
+  max-width: 700px;
+  margin: 2rem auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #222;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+}
+
+.pos h2,
+.pos h3 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #007bff;
+}
+
+.results {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.results li {
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.results li:last-child {
+  border-bottom: none;
+}
+
+.results li.highlight {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.qty-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.qty-form input {
+  width: 80px;
+  padding: 0.4rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.qty-form button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.qty-form button:hover {
+  background-color: #0056b3;
+}
+
+.basket {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.basket th,
+.basket td {
+  border: 1px solid #eee;
+  padding: 0.5rem 0.8rem;
+  text-align: left;
+}
+
+.basket th {
+  background-color: #f8f8f8;
+}
+
+.basket button {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #dc3545;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.basket button:hover {
+  background-color: #b02a37;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.total button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.total button:hover:not(:disabled) {
+  background-color: #218838;
+}
